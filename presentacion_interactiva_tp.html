@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+</head>
+<body class="bg-transparent text-[var(--foreground)] antialiased p-0 m-0">
+  <div class="py-2 space-y-2.5">
+    <!-- Top Controls / Slide Selector -->
+    <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[var(--card-border)] text-xs">
+      <div class="flex items-center gap-1.5">
+        <button onclick="setScene(0)" id="tab-0" class="px-2.5 py-1 rounded font-semibold bg-[var(--primary)] text-[var(--primary-foreground)] transition">1. Norte Solar vs Sur Eólico</button>
+        <button onclick="setScene(1)" id="tab-1" class="px-2.5 py-1 rounded font-medium bg-[var(--card)] text-[var(--muted-foreground)] border border-[var(--card-border)] transition">2. Conexión cKDTree a Subestaciones</button>
+        <button onclick="setScene(2)" id="tab-2" class="px-2.5 py-1 rounded font-medium bg-[var(--card)] text-[var(--muted-foreground)] border border-[var(--card-border)] transition">3. Flujo 500 kV y Simulador Tensión</button>
+      </div>
+      <label class="flex items-center gap-1.5 text-[var(--muted-foreground)] cursor-pointer">
+        <input id="speedRange" type="range" min="1" max="5" value="3" class="w-20 accent-[var(--primary)]" />
+        <span>Velocidad flujo</span>
+      </label>
+    </div>
+
+    <!-- Main Interactive Area (Compact <= 360px height) -->
+    <div class="grid grid-cols-12 gap-3 items-stretch">
+      <!-- Left: Animated Argentina Grid Canvas -->
+      <div class="col-span-5 bg-[var(--card)] border border-[var(--card-border)] rounded-lg p-2 flex flex-col items-center justify-between relative">
+        <div class="w-full flex justify-between items-center text-xs text-[var(--muted-foreground)] px-1">
+          <span class="font-semibold text-[var(--foreground)]">Flujo SADI en vivo</span>
+          <span id="sceneBadge" class="font-mono text-xs">246 Parques</span>
+        </div>
+        <canvas id="sadiCanvas" width="240" height="295" class="my-0.5"></canvas>
+        <div class="w-full flex flex-wrap justify-center gap-2 text-xs text-[var(--muted-foreground)] pt-1 border-t border-[var(--card-border)]">
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full inline-block" style="background:#facc15"></span>Solar</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full inline-block" style="background:#38bdf8"></span>Eólica</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full inline-block" style="background:#4ade80"></span>Bio/Hidro</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full inline-block" style="background:#ef4444"></span>ET / 500kV</span>
+        </div>
+      </div>
+
+      <!-- Right: Dynamic Scene Explanation & Interactive Simulator -->
+      <div class="col-span-7 bg-[var(--card)] border border-[var(--card-border)] rounded-lg p-3 flex flex-col justify-between space-y-2 text-xs">
+        <div id="scene-0" class="space-y-2.5">
+          <div class="font-semibold text-sm text-[var(--foreground)]">Escena 1: Especialización Latitudinal (Paralelo -36°S)</div>
+          <p class="text-[var(--muted-foreground)] leading-relaxed">
+            En el mapa animado ves cómo el paralelo <b>-36° Sur</b> divide a la generación renovable en dos polos opuestos: los parques <b>Solares (amarillos)</b> en el NOA y Cuyo, y los <b>Eólicos (celestes)</b> en la Patagonia y Sur de Buenos Aires.
+          </p>
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <div class="p-2 rounded border border-[var(--card-border)] bg-[var(--background)]">
+              <div class="font-mono font-bold text-base" style="color:#facc15">1.577 MW</div>
+              <div class="text-[var(--muted-foreground)]"><b>84 Parques Solares</b><br/>Latitud mediana: -31,3°S (San Juan, Jujuy, Salta, Catamarca)</div>
+            </div>
+            <div class="p-2 rounded border border-[var(--card-border)] bg-[var(--background)]">
+              <div class="font-mono font-bold text-base" style="color:#38bdf8">4.050 MW</div>
+              <div class="text-[var(--muted-foreground)]"><b>71 Parques Eólicos</b><br/>Latitud mediana: -38,8°S (Chubut, Santa Cruz, Sur PBA)</div>
+            </div>
+          </div>
+          <div class="p-2 rounded border border-[var(--card-border)] bg-[var(--background)] text-[var(--muted-foreground)]">
+            <b>Bioenergía (50 plantas, 173 MW)</b> e <b>Hidro PAH (41 plantas, 485 MW)</b> completan la matriz en Córdoba, Santa Fe y Cuyo.
+          </div>
+        </div>
+
+        <div id="scene-1" class="space-y-2.5 hidden">
+          <div class="font-semibold text-sm text-[var(--foreground)]">Escena 2: Vectores de Proximidad (cKDTree) Parque &rarr; Subestación</div>
+          <p class="text-[var(--muted-foreground)] leading-relaxed">
+            Los pulsos blancos muestran la energía viajando desde cada parque hasta su <b>Estación Transformadora más cercana</b> (calculada en metros con <code>EPSG:32720</code> y <code>cKDTree</code>) para elevar la tensión a 132/500 kV:
+          </p>
+          <div class="space-y-1.5 pt-1">
+            <div class="flex justify-between"><span><b>Alta Cercanía (&le; 10 km):</b> Conexión directa al nodo</span><span class="font-mono font-semibold" style="color:#4ade80">71 parques (29%)</span></div>
+            <div class="w-full h-2 rounded bg-[var(--background)] overflow-hidden"><div class="h-full" style="width:29%;background:#4ade80"></div></div>
+            <div class="flex justify-between"><span><b>Media Cercanía (10 a 30 km):</b> Línea de media/alta tensión</span><span class="font-mono font-semibold" style="color:#facc15">66 parques (27%)</span></div>
+            <div class="w-full h-2 rounded bg-[var(--background)] overflow-hidden"><div class="h-full" style="width:27%;background:#facc15"></div></div>
+            <div class="flex justify-between"><span><b>Baja / Alejada (&gt; 30 km de ET Troncal):</b> Redes provinciales o aisladas</span><span class="font-mono font-semibold" style="color:#f87171">109 parques (44%)</span></div>
+            <div class="w-full h-2 rounded bg-[var(--background)] overflow-hidden"><div class="h-full" style="width:44%;background:#f87171"></div></div>
+          </div>
+        </div>
+
+        <div id="scene-2" class="space-y-2 hidden">
+          <div class="font-semibold text-sm text-[var(--foreground)]">Escena 3: Simulador de Caída de Tensión y Transporte a AMBA</div>
+          <p class="text-[var(--muted-foreground)]">
+            Mové el deslizador para simular qué pasa con la energía de un parque de <b>50 MW</b> según los kilómetros recorridos con y sin Subestación Transformadora:
+          </p>
+          <div class="p-2.5 rounded border border-[var(--card-border)] bg-[var(--background)] space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="font-medium">Distancia del parque al consumo:</span>
+              <span id="kmReadout" class="font-mono font-bold text-sm text-[var(--primary)]">45 km</span>
+            </div>
+            <input id="kmSlider" type="range" min="5" max="250" value="45" oninput="updateSim()" class="w-full accent-[var(--primary)]" />
+            <div class="space-y-1 pt-1">
+              <div class="flex justify-between"><span>Sin Subestación (Media Tensión 33 kV):</span><span id="txt33" class="font-mono font-semibold" style="color:#f87171"></span></div>
+              <div class="w-full h-2 rounded bg-[var(--card)] overflow-hidden"><div id="bar33" class="h-full" style="background:#ef4444"></div></div>
+              <div class="flex justify-between"><span>Con Subestación 132 kV (Regional):</span><span id="txt132" class="font-mono font-semibold" style="color:#facc15"></span></div>
+              <div class="w-full h-2 rounded bg-[var(--card)] overflow-hidden"><div id="bar132" class="h-full" style="background:#eab308"></div></div>
+              <div class="flex justify-between"><span>Con Subestación 500 kV (Troncal SADI a AMBA):</span><span id="txt500" class="font-mono font-semibold" style="color:#4ade80"></span></div>
+              <div class="w-full h-2 rounded bg-[var(--card)] overflow-hidden"><div id="bar500" class="h-full" style="background:#22c55e"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Status Footer -->
+        <div class="pt-2 border-t border-[var(--card-border)] flex justify-between items-center text-[var(--muted-foreground)]">
+          <span id="footerHint">Hacé clic en las 3 pestañas de arriba para recorrer la historia del TP</span>
+          <span class="font-mono">CRS: EPSG:32720</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('sadiCanvas');
+    const ctx = canvas.getContext('2d');
+    let scene = 0;
+    let t = 0;
+
+    // Stylized accurate silhouette of Continental Argentina (lon, lat)
+    const argOutline = [
+      [-66.5,-21.8],[-64.5,-22.1],[-62.4,-22.2],[-60.0,-23.8],[-57.6,-25.3],
+      [-55.6,-27.3],[-53.7,-26.0],[-54.5,-27.8],[-56.0,-28.5],[-57.6,-30.2],
+      [-58.4,-33.9],[-57.2,-35.5],[-56.7,-36.9],[-57.5,-38.0],[-60.2,-38.9],
+      [-62.1,-39.0],[-62.3,-40.8],[-65.0,-40.8],[-64.2,-42.8],[-65.3,-44.5],
+      [-67.5,-46.0],[-65.9,-47.8],[-68.5,-50.2],[-68.4,-52.3],[-66.5,-54.8],
+      [-68.6,-54.9],[-72.2,-51.5],[-73.0,-49.0],[-71.8,-45.0],[-71.8,-41.0],
+      [-70.5,-36.0],[-69.8,-32.5],[-69.1,-28.0],[-68.4,-24.5],[-67.0,-22.5]
+    ];
+
+    // Representative 500kV Corridors (North->Center->AMBA, Cuyo->Center->AMBA, Patagonia->AMBA)
+    const corridors500 = [
+      [[-65.3,-24.2],[-65.2,-26.8],[-64.2,-27.8],[-64.1,-31.4],[-60.7,-32.9],[-58.5,-34.6]],
+      [[-68.5,-31.5],[-68.8,-32.9],[-64.3,-33.1],[-60.7,-32.9],[-58.5,-34.6]],
+      [[-70.1,-50.1],[-67.5,-45.8],[-65.1,-43.2],[-65.0,-40.7],[-62.2,-38.7],[-58.5,-34.6]],
+      [[-68.5,-39.0],[-62.2,-38.7],[-59.8,-36.9],[-58.5,-34.6]],
+      [[-56.6,-27.5],[-58.0,-31.3],[-58.5,-34.6]]
+    ];
+
+    // Representative Clusters of Renewable Parks & Nearest Substations [px, py, sx, sy, type]
+    const nodes = [
+      // Solar NOA & Cuyo
+      [-66.7,-24.1,-65.3,-24.2,'Solar'], [-65.8,-24.8,-65.2,-25.1,'Solar'],
+      [-66.0,-26.1,-65.3,-26.8,'Solar'], [-65.8,-28.5,-65.7,-28.4,'Solar'],
+      [-66.9,-29.3,-66.8,-29.4,'Solar'], [-67.5,-29.1,-66.8,-29.4,'Solar'],
+      [-68.6,-30.3,-68.5,-31.5,'Solar'], [-68.5,-31.4,-68.5,-31.5,'Solar'],
+      [-68.2,-31.8,-68.5,-31.5,'Solar'], [-68.9,-32.8,-68.8,-32.9,'Solar'],
+      [-66.3,-33.3,-65.5,-33.6,'Solar'], [-65.0,-31.8,-64.2,-31.4,'Solar'],
+      // Bio & PAH Center/Cordillera
+      [-63.4,-30.8,-64.1,-31.4,'Bio'], [-62.6,-32.6,-63.2,-32.4,'Bio'],
+      [-64.3,-33.1,-64.3,-33.1,'Bio'], [-61.2,-33.0,-60.7,-32.9,'Bio'],
+      [-65.2,-26.9,-65.2,-26.8,'Bio'], [-69.1,-33.1,-68.8,-32.9,'PAH'],
+      // Wind South PBA & Patagonia
+      [-66.8,-28.6,-66.8,-29.4,'Eolica'], [-64.8,-33.2,-64.3,-33.1,'Eolica'],
+      [-62.1,-38.5,-62.2,-38.7,'Eolica'], [-61.8,-38.7,-62.2,-38.7,'Eolica'],
+      [-60.2,-38.3,-59.8,-36.9,'Eolica'], [-58.8,-38.5,-59.8,-36.9,'Eolica'],
+      [-68.9,-39.2,-68.5,-39.0,'Eolica'], [-65.1,-42.7,-65.1,-43.2,'Eolica'],
+      [-65.2,-43.3,-65.1,-43.2,'Eolica'], [-67.6,-45.7,-67.5,-45.8,'Eolica'],
+      [-67.8,-46.5,-67.5,-45.8,'Eolica'], [-68.2,-46.8,-67.5,-45.8,'Eolica'],
+      [-70.5,-46.6,-67.5,-45.8,'Eolica'], [-69.2,-50.0,-70.1,-50.1,'Eolica']
+    ];
+
+    function proj(lon, lat) {
+      const minLon = -74.0, maxLon = -53.2;
+      const minLat = -55.5, maxLat = -21.2;
+      const x = 14 + ((lon - minLon) / (maxLon - minLon)) * (canvas.width - 28);
+      const y = 10 + ((maxLat - lat) / (maxLat - minLat)) * (canvas.height - 20);
+      return [x, y];
+    }
+
+    function setScene(idx) {
+      scene = idx;
+      for (let i = 0; i < 3; i++) {
+        document.getElementById('scene-' + i).classList.toggle('hidden', i !== idx);
+        const tab = document.getElementById('tab-' + i);
+        if (i === idx) {
+          tab.className = 'px-2.5 py-1 rounded font-semibold bg-[var(--primary)] text-[var(--primary-foreground)] transition';
+        } else {
+          tab.className = 'px-2.5 py-1 rounded font-medium bg-[var(--card)] text-[var(--muted-foreground)] border border-[var(--card-border)] transition';
+        }
+      }
+      const badges = ['Paralelo -36°S', 'Vectores cKDTree', 'Red 500kV -> AMBA'];
+      document.getElementById('sceneBadge').textContent = badges[idx];
+    }
+
+    function updateSim() {
+      const km = parseFloat(document.getElementById('kmSlider').value);
+      document.getElementById('kmReadout').textContent = km + ' km';
+      const loss33 = Math.min(100, km * 1.4);
+      const loss132 = Math.min(100, km * 0.09);
+      const loss500 = Math.min(100, km * 0.007);
+
+      const rem33 = Math.max(0, 100 - loss33).toFixed(0);
+      const rem132 = Math.max(0, 100 - loss132).toFixed(1);
+      const rem500 = Math.max(0, 100 - loss500).toFixed(1);
+
+      document.getElementById('txt33').textContent = loss33 > 35 ? `Pérdida ${loss33.toFixed(0)}% (Cae tensión)` : `Llega ${rem33}%`;
+      document.getElementById('txt132').textContent = `Llega ${rem132}%`;
+      document.getElementById('txt500').textContent = `Llega ${rem500}%`;
+
+      document.getElementById('bar33').style.width = rem33 + '%';
+      document.getElementById('bar132').style.width = rem132 + '%';
+      document.getElementById('bar500').style.width = rem500 + '%';
+    }
+    updateSim();
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const isLight = document.documentElement.classList.contains('light');
+      const spd = parseFloat(document.getElementById('speedRange').value) * 0.006;
+      t = (t + spd) % 1;
+
+      // 1. Draw Argentina silhouette
+      ctx.fillStyle = isLight ? 'rgba(148, 163, 184, 0.18)' : 'rgba(30, 41, 59, 0.75)';
+      ctx.strokeStyle = isLight ? 'rgba(100, 116, 139, 0.5)' : 'rgba(148, 163, 184, 0.4)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      argOutline.forEach(([lon, lat], i) => {
+        const [x, y] = proj(lon, lat);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Parallel -36°S on Scene 0
+      if (scene === 0) {
+        const [x1, y36] = proj(-73.0, -36.0);
+        const [x2, _] = proj(-54.0, -36.0);
+        ctx.save();
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.moveTo(x1, y36);
+        ctx.lineTo(x2, y36);
+        ctx.stroke();
+        ctx.fillStyle = '#ef4444';
+        ctx.font = 'bold 9px sans-serif';
+        ctx.fillText('-36°S', x2 - 28, y36 - 4);
+        ctx.restore();
+      }
+
+      // 2. Draw 500 kV Corridors & Flowing Energy Pulses
+      for (const path of corridors500) {
+        ctx.strokeStyle = scene === 2 ? '#ef4444' : 'rgba(239, 68, 68, 0.35)';
+        ctx.lineWidth = scene === 2 ? 2.0 : 1.1;
+        ctx.beginPath();
+        path.forEach(([lon, lat], i) => {
+          const [x, y] = proj(lon, lat);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Moving particles along each segment toward AMBA
+        for (let i = 0; i < path.length - 1; i++) {
+          const [x1, y1] = proj(path[i][0], path[i][1]);
+          const [x2, y2] = proj(path[i+1][0], path[i+1][1]);
+          const frac = (t + i * 0.22) % 1;
+          const px = x1 + (x2 - x1) * frac;
+          const py = y1 + (y2 - y1) * frac;
+          ctx.fillStyle = scene === 2 ? '#fde047' : '#f87171';
+          ctx.beginPath();
+          ctx.arc(px, py, scene === 2 ? 2.6 : 1.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // 3. Draw cKDTree Vectors (Park -> Nearest Substation) on Scene 1
+      const colMap = { Solar: '#facc15', Eolica: '#38bdf8', Bio: '#4ade80', PAH: '#c084fc' };
+      nodes.forEach(([px, py, sx, sy, kind], idx) => {
+        const [x1, y1] = proj(px, py);
+        const [x2, y2] = proj(sx, sy);
+
+        if (scene === 1) {
+          ctx.strokeStyle = colMap[kind];
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+
+          const frac = (t * 1.5 + idx * 0.1) % 1;
+          const mx = x1 + (x2 - x1) * frac;
+          const my = y1 + (y2 - y1) * frac;
+          ctx.fillStyle = isLight ? '#0f172a' : '#ffffff';
+          ctx.beginPath();
+          ctx.arc(mx, my, 2.0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Substation dot
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(x2, y2, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Park dot
+        ctx.fillStyle = colMap[kind];
+        ctx.strokeStyle = '#0f172a';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.arc(x1, y1, 4.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      });
+
+      // AMBA Demand Pulse on Scene 2
+      if (scene === 2) {
+        const [ax, ay] = proj(-58.5, -34.6);
+        const rPulse = 5 + Math.sin(t * Math.PI * 2) * 3.5;
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(ax, ay, rPulse, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('themechange', () => {});
+    draw();
+  </script>
+</body>
+</html>
