@@ -1,10 +1,10 @@
-# ⚡ Análisis Geoespacial de Energías Renovables, Red de Alta Tensión (SADI) y Demanda Eléctrica en Argentina
+# Análisis Geoespacial de Energías Renovables, Red de Alta Tensión (SADI) y Demanda Eléctrica en Argentina
 
 Proyecto desarrollado en el marco del **Módulo 4 (Visualización de Datos)** de la **Diplomatura en Ciencia de Datos y Análisis Avanzado (UTN.BA)**.
 
 ---
 
-## 📌 Descripción del Proyecto
+## Descripción del Proyecto
 
 En Argentina, el potencial de generación de energías limpias presenta una marcada especialización geográfica:
 * **Norte y Cuyo (NOA/Cuyo):** Concentración de **parques solares fotovoltaicos** debido a los altos niveles de radiación solar directa.
@@ -19,7 +19,7 @@ Sin embargo, más del **70% de la demanda eléctrica nacional** se concentra en 
 
 ---
 
-## 🗺️ Principales Visualizaciones
+## Principales Visualizaciones
 
 ### 1. Red de Alta Tensión (SADI), Subestaciones y Parques Renovables
 ![Mapa Nacional SADI y Parques Renovables](figuras/fig_01_mapa_nacional_sadi.png)
@@ -38,7 +38,7 @@ Sin embargo, más del **70% de la demanda eléctrica nacional** se concentra en 
 
 ---
 
-## 🛠️ Stack Tecnológico y Herramientas
+## Stack Tecnológico y Herramientas
 
 * **Lenguaje:** Python 3.12
 * **Análisis Geoespacial:** `GeoPandas`, `Shapely`, `PyProj` (`EPSG:4326` y `EPSG:32720`), `SciPy` (`cKDTree`)
@@ -47,7 +47,7 @@ Sin embargo, más del **70% de la demanda eléctrica nacional** se concentra en 
 
 ---
 
-## 📂 Estructura del Repositorio
+## Estructura del Repositorio
 
 * `TP_Visualizacion_Energias_Renovables.ipynb`: Cuaderno Jupyter completo con la exploración (EDA), limpieza, reproyección cartográfica, cruces espaciales, visualizaciones y conclusiones.
 * `mapa_interactivo_energias_renovables.html`: Mapa coroplético interactivo en `Folium` con capas seleccionables y tooltips por provincia y parque renovable.
