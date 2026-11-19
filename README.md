@@ -2,6 +2,12 @@
 
 Proyecto desarrollado en el marco del **Módulo 4 (Visualización de Datos)** de la **Diplomatura en Ciencia de Datos y Análisis Avanzado (UTN.BA)**.
 
+**Integrantes del Grupo:**
+* **Nouvard, Ezequiel**
+* **Ojeda, Wanda**
+* **Passero, Genaro Agustín**
+* **Urbina Salazar, Laida**
+
 ---
 
 ## Descripción del Proyecto
